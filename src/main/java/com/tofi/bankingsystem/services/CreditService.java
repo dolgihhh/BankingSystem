@@ -3,7 +3,6 @@ package com.tofi.bankingsystem.services;
 import com.tofi.bankingsystem.dto.requests.CreditDTO;
 import com.tofi.bankingsystem.dto.requests.CreditPaymentDTO;
 import com.tofi.bankingsystem.dto.responses.CreditResponseDTO;
-import com.tofi.bankingsystem.dto.responses.TransactionResponseDTO;
 import com.tofi.bankingsystem.entities.BankAccount;
 import com.tofi.bankingsystem.entities.Credit;
 import com.tofi.bankingsystem.entities.User;
@@ -38,19 +37,23 @@ public class CreditService {
 
     @Transactional
     public ResponseEntity<?> takeCredit(CreditDTO creditDTO) throws RecipientAccNotExistsException {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
 
         BankAccount recipientBankAccount =
-                bankAccountService.findBankAccountByNumber(creditDTO.getRecipientBankAccountNumber())
-                        .orElseThrow(() -> new RecipientAccNotExistsException("No such " +
-                                "recipient bank account"));
+                bankAccountService.findBankAccountByNumber(
+                                          creditDTO.getRecipientBankAccountNumber())
+                                  .orElseThrow(() -> new RecipientAccNotExistsException("No such " +
+                                                                                        "recipient bank account"));
 
-        if(!user.equals(recipientBankAccount.getUser())) {
+        if (!user.equals(recipientBankAccount.getUser())) {
             throw new RecipientAccNotExistsException("No such recipient bank account");
         }
 
-        if(recipientBankAccount.getSaving() != null || recipientBankAccount.getCredit() != null) {
+        if (recipientBankAccount.getSaving() != null || recipientBankAccount.getCredit() != null) {
             throw new RecipientAccNotExistsException("No such recipient bank account");
         }
 
@@ -61,17 +64,23 @@ public class CreditService {
         newCredit.setAmount(creditDTO.getAmount());
         newCredit.setCreditType(creditDTO.getCreditType());
         BigDecimal monthlyPayment = calculateMonthlyPayment(creditDTO.getAmount(),
-                creditDTO.getInterestRate(), creditDTO.getTerm(), creditDTO.getCreditType());
+                                                            creditDTO.getInterestRate(),
+                                                            creditDTO.getTerm(),
+                                                            creditDTO.getCreditType());
         newCredit.setMonthlyPayment(monthlyPayment);
         newCredit.setBalanceOfMainDebt(creditDTO.getCreditType() == CreditType.ANNUITY ? null :
-                creditDTO.getAmount());
+                                       creditDTO.getAmount());
         BigDecimal debtBalance = calculateDebtBalance(creditDTO.getAmount(), monthlyPayment,
-                creditDTO.getInterestRate(), creditDTO.getTerm(), creditDTO.getCreditType());
+                                                      creditDTO.getInterestRate(),
+                                                      creditDTO.getTerm(),
+                                                      creditDTO.getCreditType());
 
-        BigDecimal b = (creditDTO.getAmount().divide(BigDecimal.valueOf(creditDTO.getTerm()),
-                MathContext.DECIMAL128)).setScale(2, RoundingMode.CEILING);
+        BigDecimal b = (creditDTO.getAmount()
+                                 .divide(BigDecimal.valueOf(creditDTO.getTerm()),
+                                         MathContext.DECIMAL128)).setScale(2, RoundingMode.CEILING);
 
-        newCredit.setMonthlyMainDebtPayment(creditDTO.getCreditType() == CreditType.ANNUITY ? null : b);
+        newCredit.setMonthlyMainDebtPayment(
+                creditDTO.getCreditType() == CreditType.ANNUITY ? null : b);
         newCredit.setBalanceOfDebt(debtBalance);
         newCredit.setTerm(creditDTO.getTerm());
         newCredit.setUser(user);
@@ -81,7 +90,8 @@ public class CreditService {
         creditRepository.save(newCredit);
 
         transactionService.takeCreditTransaction(creditBankAccount,
-                recipientBankAccount, creditDTO.getAmount(), debtBalance);
+                                                 recipientBankAccount, creditDTO.getAmount(),
+                                                 debtBalance);
 
         CreditResponseDTO creditResponseDTO = getCreditResponseDTO(newCredit);
 
@@ -115,11 +125,12 @@ public class CreditService {
                                                Integer term, CreditType creditType) {
         BigDecimal monthlyPayment;
         BigDecimal P = interestRate.divide(BigDecimal.valueOf(12), MathContext.DECIMAL128)
-                .multiply(BigDecimal.valueOf(0.01));
+                                   .multiply(BigDecimal.valueOf(0.01));
 
-        if(creditType == CreditType.ANNUITY) {
+        if (creditType == CreditType.ANNUITY) {
             BigDecimal denom = ((BigDecimal.ONE.add(P)).pow(term)).subtract(BigDecimal.ONE);
-            monthlyPayment = creditAmount.multiply(P.add((P.divide(denom, MathContext.DECIMAL128))));
+            monthlyPayment =
+                    creditAmount.multiply(P.add((P.divide(denom, MathContext.DECIMAL128))));
             monthlyPayment = monthlyPayment.setScale(2, RoundingMode.CEILING);
         } else {
             BigDecimal b = (creditAmount.divide(BigDecimal.valueOf(term), MathContext.DECIMAL128))
@@ -132,20 +143,22 @@ public class CreditService {
     }
 
     private BigDecimal calculateDebtBalance(BigDecimal creditAmount, BigDecimal monthlyPayment,
-                                            BigDecimal interestRate, Integer term, CreditType creditType) {
-        if(creditType == CreditType.ANNUITY) {
+                                            BigDecimal interestRate, Integer term,
+                                            CreditType creditType) {
+        if (creditType == CreditType.ANNUITY) {
             return monthlyPayment.multiply(BigDecimal.valueOf(term));
         } else {
             BigDecimal debtBalance = BigDecimal.ZERO;
             BigDecimal b = (creditAmount.divide(BigDecimal.valueOf(term), MathContext.DECIMAL128))
                     .setScale(2, RoundingMode.CEILING);
             BigDecimal P = interestRate.divide(BigDecimal.valueOf(12), MathContext.DECIMAL128)
-                    .multiply(BigDecimal.valueOf(0.01));
+                                       .multiply(BigDecimal.valueOf(0.01));
 
-            for(int i = 0; i < term; i++) {
+            for (int i = 0; i < term; i++) {
                 BigDecimal I = (creditAmount.multiply(P)).setScale(2, RoundingMode.CEILING);
                 BigDecimal monthPay;
-                if(creditAmount.subtract(b).compareTo(BigDecimal.ZERO) < 0) {
+                if (creditAmount.subtract(b)
+                                .compareTo(BigDecimal.ZERO) < 0) {
                     monthPay = creditAmount.add(I);
                     creditAmount = BigDecimal.ZERO;
                 } else {
@@ -161,70 +174,85 @@ public class CreditService {
 
     @Transactional
     public ResponseEntity<?> makeCreditPayment(CreditPaymentDTO creditPaymentDTO)
-            throws SenderAccNotExistsException, CreditNotExistsException, InsufficientFundsException {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+            throws SenderAccNotExistsException, CreditNotExistsException,
+                   InsufficientFundsException {
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
 
         BankAccount senderBankAccount =
                 bankAccountService.findBankAccountByNumber(creditPaymentDTO.getBankAccountNumber())
-                        .orElseThrow(() -> new SenderAccNotExistsException("You don't have such а" +
-                                "bank account"));
+                                  .orElseThrow(() -> new SenderAccNotExistsException(
+                                          "You don't have such а" +
+                                          "bank account"));
 
-        if(!user.equals(senderBankAccount.getUser())) {
+        if (!user.equals(senderBankAccount.getUser())) {
             throw new SenderAccNotExistsException("You don't have such а bank account");
         }
 
-        if(senderBankAccount.getSaving() != null || senderBankAccount.getCredit() != null) {
+        if (senderBankAccount.getSaving() != null || senderBankAccount.getCredit() != null) {
             throw new SenderAccNotExistsException("You don't have such а bank account");
         }
 
         Credit credit = findCreditById(creditPaymentDTO.getCreditId())
-                        .orElseThrow(() -> new CreditNotExistsException("You don't have such а" +
-                                "credit"));
+                .orElseThrow(() -> new CreditNotExistsException("You don't have such а" +
+                                                                "credit"));
 
-        if(!user.equals(credit.getUser())) {
+        if (!user.equals(credit.getUser())) {
             throw new CreditNotExistsException("You don't have such а credit");
         }
 
-        if(credit.isRepaid()) {
+        if (credit.isRepaid()) {
             throw new CreditNotExistsException("You have already repaid this credit");
         }
 
-        if (senderBankAccount.getBalance().compareTo(credit.getMonthlyPayment()) < 0) {
+        if (senderBankAccount.getBalance()
+                             .compareTo(credit.getMonthlyPayment()) < 0) {
             throw new InsufficientFundsException("Insufficient funds in the bank account");
         }
 
 
         BigDecimal monthlyPayment = credit.getMonthlyPayment();
-        BigDecimal newDebt = credit.getBalanceOfDebt().subtract(monthlyPayment);
+        BigDecimal newDebt = credit.getBalanceOfDebt()
+                                   .subtract(monthlyPayment);
         credit.setBalanceOfDebt(newDebt);
         creditRepository.save(credit);
 
         transactionService.creditPaymentTransaction(credit.getBankAccount(), senderBankAccount,
-                monthlyPayment);
+                                                    monthlyPayment);
 
-        if(credit.getCreditType() == CreditType.DIFF) {
-            BigDecimal P = credit.getInterestRate().divide(BigDecimal.valueOf(12), MathContext.DECIMAL128)
-                    .multiply(BigDecimal.valueOf(0.01));
+        if (credit.getCreditType() == CreditType.DIFF) {
+            BigDecimal P = credit.getInterestRate()
+                                 .divide(BigDecimal.valueOf(12), MathContext.DECIMAL128)
+                                 .multiply(BigDecimal.valueOf(0.01));
 
-            BigDecimal newMainDebt = credit.getBalanceOfMainDebt().subtract(credit.getMonthlyMainDebtPayment());
+            BigDecimal newMainDebt = credit.getBalanceOfMainDebt()
+                                           .subtract(credit.getMonthlyMainDebtPayment());
             credit.setBalanceOfMainDebt(newMainDebt);
             BigDecimal I = (newMainDebt.multiply(P)).setScale(2, RoundingMode.CEILING);
-            BigDecimal newMonthPayment = credit.getMonthlyMainDebtPayment().add(I);
+            BigDecimal newMonthPayment = credit.getMonthlyMainDebtPayment()
+                                               .add(I);
             credit.setMonthlyPayment(newMonthPayment);
             creditRepository.save(credit);
 
-            if(credit.getBalanceOfMainDebt().subtract(credit.getMonthlyMainDebtPayment()).compareTo(BigDecimal.ZERO) < 0
-                    && credit.getBalanceOfMainDebt().compareTo(BigDecimal.ZERO) != 0) {
-                BigDecimal difference =
-                        credit.getMonthlyMainDebtPayment().subtract(credit.getBalanceOfMainDebt());
-                credit.setMonthlyPayment(credit.getMonthlyPayment().subtract(difference));
-                credit.setMonthlyMainDebtPayment(credit.getMonthlyMainDebtPayment().subtract(difference));
+            if (credit.getBalanceOfMainDebt()
+                      .subtract(credit.getMonthlyMainDebtPayment())
+                      .compareTo(BigDecimal.ZERO) < 0
+                && credit.getBalanceOfMainDebt()
+                         .compareTo(BigDecimal.ZERO) != 0) {
+                BigDecimal difference = credit.getMonthlyMainDebtPayment()
+                                              .subtract(credit.getBalanceOfMainDebt());
+                credit.setMonthlyPayment(credit.getMonthlyPayment()
+                                               .subtract(difference));
+                credit.setMonthlyMainDebtPayment(credit.getMonthlyMainDebtPayment()
+                                                       .subtract(difference));
                 creditRepository.save(credit);
             }
         }
 
-        if(newDebt.compareTo(BigDecimal.ZERO) == 0) {
+        if (newDebt.compareTo(BigDecimal.ZERO) == 0) {
             credit.setRepaid(true);
             creditRepository.save(credit);
             return ResponseHandler.generateResponse("Credit repaid", HttpStatus.OK);
@@ -245,8 +273,11 @@ public class CreditService {
     }
 
     public ResponseEntity<?> getCredits() {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
 
         List<Credit> credits = user.getCredits();
         List<CreditResponseDTO> creditsResponseDTO = new ArrayList<>();
@@ -256,8 +287,10 @@ public class CreditService {
                 creditsResponseDTO.add(getCreditResponseDTO(credit));
             }
         }
-        creditsResponseDTO.sort(Comparator.comparing(CreditResponseDTO::getStartDate).reversed());
+        creditsResponseDTO.sort(Comparator.comparing(CreditResponseDTO::getStartDate)
+                                          .reversed());
 
-        return ResponseEntity.status(HttpStatus.OK).body(creditsResponseDTO);
+        return ResponseEntity.status(HttpStatus.OK)
+                             .body(creditsResponseDTO);
     }
 }

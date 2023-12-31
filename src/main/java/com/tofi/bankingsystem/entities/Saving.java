@@ -6,8 +6,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-@Entity(name="Savings")
-@Table(name="savings")
+@Entity(name = "Savings")
+@Table(name = "savings")
 @Data
 @AllArgsConstructor
 public class Saving {
@@ -21,7 +21,8 @@ public class Saving {
     private User user;
 
     @OneToOne
-    @JoinColumn(name = "bank_account_number", referencedColumnName = "account_number", nullable = false)
+    @JoinColumn(name = "bank_account_number", referencedColumnName = "account_number",
+                nullable = false)
     private BankAccount bankAccount;
 
     @Column(name = "total_accumulated", nullable = false)

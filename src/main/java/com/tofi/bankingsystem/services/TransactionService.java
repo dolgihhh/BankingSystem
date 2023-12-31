@@ -21,7 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,46 +36,55 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
 
     @Transactional
-    public ResponseEntity<?> makeTransaction(TransactionDTO transactionDTO) throws SameSenderAndRecipientAccException,
-            SenderAccNotExistsException, RecipientAccNotExistsException, InsufficientFundsException {
+    public ResponseEntity<?> makeTransaction(TransactionDTO transactionDTO)
+            throws SameSenderAndRecipientAccException,
+                   SenderAccNotExistsException, RecipientAccNotExistsException,
+                   InsufficientFundsException {
 
-        if(transactionDTO.getSenderBankAccountNumber().equals(transactionDTO.getRecipientBankAccountNumber())) {
+        if (transactionDTO.getSenderBankAccountNumber()
+                          .equals(transactionDTO.getRecipientBankAccountNumber())) {
             throw new SameSenderAndRecipientAccException("Same sender and recipient bank account");
         }
 
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
         Saving saving = user.getSaving();
 
         BankAccount senderBankAccount =
-                bankAccountService.findBankAccountByNumber(transactionDTO.getSenderBankAccountNumber())
-                        .orElseThrow(() -> new SenderAccNotExistsException("You don't have such а" +
-                                "bank account"));
+                bankAccountService.findBankAccountByNumber(
+                                          transactionDTO.getSenderBankAccountNumber())
+                                  .orElseThrow(() -> new SenderAccNotExistsException(
+                                          "You don't have such а" +
+                                          "bank account"));
 
-        if(!user.equals(senderBankAccount.getUser()) || senderBankAccount.getCredit() != null) {
+        if (!user.equals(senderBankAccount.getUser()) || senderBankAccount.getCredit() != null) {
             throw new SenderAccNotExistsException("You don't have such а bank account");
         }
 
-        if(saving != null && saving.getBankAccount().equals(senderBankAccount) && saving.isFrozen()) {
+        if (saving != null && saving.getBankAccount()
+                                    .equals(senderBankAccount) && saving.isFrozen()) {
             throw new SenderAccNotExistsException("Savings is frozen");
         }
 
-
-
         BankAccount recipientBankAccount =
-                bankAccountService.findBankAccountByNumber(transactionDTO.getRecipientBankAccountNumber())
-                        .orElseThrow(() -> new RecipientAccNotExistsException("No such " +
-                                "recipient bank account"));
+                bankAccountService.findBankAccountByNumber(
+                                          transactionDTO.getRecipientBankAccountNumber())
+                                  .orElseThrow(() -> new RecipientAccNotExistsException("No such " +
+                                                                                        "recipient bank account"));
 
-        if(recipientBankAccount.getSaving() != null || recipientBankAccount.getCredit() != null) {
+        if (recipientBankAccount.getSaving() != null || recipientBankAccount.getCredit() != null) {
             throw new RecipientAccNotExistsException("No such recipient bank account");
         }
 
-        if(senderBankAccount.getSaving() != null && !user.equals(recipientBankAccount.getUser())) {
+        if (senderBankAccount.getSaving() != null && !user.equals(recipientBankAccount.getUser())) {
             throw new RecipientAccNotExistsException("Can't transfer savings to another user");
         }
 
-        if (senderBankAccount.getBalance().compareTo(transactionDTO.getAmount()) < 0) {
+        if (senderBankAccount.getBalance()
+                             .compareTo(transactionDTO.getAmount()) < 0) {
             throw new InsufficientFundsException("Insufficient funds in the bank account");
         }
 
@@ -89,24 +101,28 @@ public class TransactionService {
 
         TransactionResponseDTO transactionResponseDTO = getTransactionResponseDTO(newTransaction);
 
-        createSavingTransaction(saving, senderBankAccount, transactionDTO.getAmount(), newTransaction.getId());
+        createSavingTransaction(saving, senderBankAccount, transactionDTO.getAmount(),
+                                newTransaction.getId());
 
         return ResponseEntity.ok(transactionResponseDTO);
     }
 
-    private void createSavingTransaction(Saving saving, BankAccount senderBankAccount, BigDecimal amount,
+    private void createSavingTransaction(Saving saving, BankAccount senderBankAccount,
+                                         BigDecimal amount,
                                          UUID mainTransactionId) {
-        if(saving != null && saving.isOn() && !saving.getBankAccount().equals(senderBankAccount)) {
+        if (saving != null && saving.isOn() && !saving.getBankAccount()
+                                                      .equals(senderBankAccount)) {
             BigDecimal roundingValue = saving.getRoundingValue();
             BigDecimal savingAmount;
             BigDecimal ratio = amount.divide(roundingValue, MathContext.DECIMAL128);
             BigDecimal integerPart = new BigDecimal(ratio.intValue());
             BigDecimal fractionalPart = ratio.remainder(BigDecimal.ONE);
-            if(fractionalPart.compareTo(BigDecimal.ZERO) != 0) {
+            if (fractionalPart.compareTo(BigDecimal.ZERO) != 0) {
                 savingAmount = integerPart.add(BigDecimal.ONE)
-                        .multiply(roundingValue)
-                        .subtract(amount);
-                if(senderBankAccount.getBalance().compareTo(savingAmount) >= 0) {
+                                          .multiply(roundingValue)
+                                          .subtract(amount);
+                if (senderBankAccount.getBalance()
+                                     .compareTo(savingAmount) >= 0) {
                     Transaction savingTransaction = new Transaction();
                     savingTransaction.setAmount(savingAmount);
                     savingTransaction.setSenderBankAccount(senderBankAccount);
@@ -125,8 +141,11 @@ public class TransactionService {
     private static TransactionResponseDTO getTransactionResponseDTO(Transaction newTransaction) {
         TransactionResponseDTO transactionResponseDTO = new TransactionResponseDTO();
         transactionResponseDTO.setId(newTransaction.getId());
-        transactionResponseDTO.setSenderBankAccountNumber(newTransaction.getSenderBankAccount().getNumber());
-        transactionResponseDTO.setRecipientBankAccountNumber(newTransaction.getRecipientBankAccount().getNumber());
+        transactionResponseDTO.setSenderBankAccountNumber(newTransaction.getSenderBankAccount()
+                                                                        .getNumber());
+        transactionResponseDTO.setRecipientBankAccountNumber(
+                newTransaction.getRecipientBankAccount()
+                              .getNumber());
         transactionResponseDTO.setAmount(newTransaction.getAmount());
         transactionResponseDTO.setTransactionDate(newTransaction.getTransactionDate());
         transactionResponseDTO.setDescription(newTransaction.getDescription());
@@ -134,7 +153,8 @@ public class TransactionService {
         return transactionResponseDTO;
     }
 
-    public void takeCreditTransaction(BankAccount creditBankAccount, BankAccount recipientBankAccount,
+    public void takeCreditTransaction(BankAccount creditBankAccount,
+                                      BankAccount recipientBankAccount,
                                       BigDecimal creditAmount, BigDecimal debtAmount) {
         Transaction takeCreditTransaction = new Transaction();
         takeCreditTransaction.setAmount(creditAmount);
@@ -159,45 +179,53 @@ public class TransactionService {
     }
 
     public ResponseEntity<?> getReceivedTransaction() {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
         List<BankAccount> bankAccounts = user.getBankAccounts();
         List<TransactionResponseDTO> receivedTransactions = new ArrayList<>();
         if (bankAccounts != null) {
             for (BankAccount bankAccount : bankAccounts) {
                 if (bankAccount.getReceivedTransactions() != null && bankAccount.getCredit() == null
-                        && bankAccount.getSaving() == null) {
+                    && bankAccount.getSaving() == null) {
                     for (Transaction transaction : bankAccount.getReceivedTransactions()) {
                         receivedTransactions.add(getTransactionResponseDTO(transaction));
                     }
                 }
             }
         }
-        receivedTransactions.sort(Comparator.comparing(TransactionResponseDTO::getTransactionDate).reversed());
+        receivedTransactions.sort(Comparator.comparing(TransactionResponseDTO::getTransactionDate)
+                                            .reversed());
 
-        return ResponseEntity.status(HttpStatus.OK).body(receivedTransactions);
+        return ResponseEntity.status(HttpStatus.OK)
+                             .body(receivedTransactions);
     }
 
     public ResponseEntity<?> getSentTransaction() {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
 
         List<BankAccount> bankAccounts = user.getBankAccounts();
         List<TransactionResponseDTO> sentTransactions = new ArrayList<>();
         if (bankAccounts != null) {
             for (BankAccount bankAccount : bankAccounts) {
                 if (bankAccount.getSentTransactions() != null && bankAccount.getCredit() == null
-                        && bankAccount.getSaving() == null) {
+                    && bankAccount.getSaving() == null) {
                     for (Transaction transaction : bankAccount.getSentTransactions()) {
                         sentTransactions.add(getTransactionResponseDTO(transaction));
                     }
                 }
             }
         }
-        sentTransactions.sort(Comparator.comparing(TransactionResponseDTO::getTransactionDate).reversed());
+        sentTransactions.sort(Comparator.comparing(TransactionResponseDTO::getTransactionDate)
+                                        .reversed());
 
-        return ResponseEntity.status(HttpStatus.OK).body(sentTransactions);
+        return ResponseEntity.status(HttpStatus.OK)
+                             .body(sentTransactions);
     }
-
-
 }

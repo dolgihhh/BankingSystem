@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Entity(name="BankAccounts")
-@Table(name="bank_accounts")
+@Entity(name = "BankAccounts")
+@Table(name = "bank_accounts")
 @Data
 @AllArgsConstructor
 public class BankAccount {

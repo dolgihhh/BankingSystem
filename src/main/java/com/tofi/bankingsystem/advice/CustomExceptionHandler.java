@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,19 +19,22 @@ public class CustomExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Map<String, String> handleInvalidArgument(MethodArgumentNotValidException exception) {
-        Map<String, String> map =  new HashMap<>();
-        exception.getBindingResult().getFieldErrors().forEach(fieldError ->
-                map.put(fieldError.getField(), fieldError.getDefaultMessage()));
+        Map<String, String> map = new HashMap<>();
+        exception.getBindingResult()
+                 .getFieldErrors()
+                 .forEach(fieldError ->
+                                  map.put(fieldError.getField(), fieldError.getDefaultMessage()));
 
         return map;
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public Map<String, String> handleUserAlreadyExistsException(UserAlreadyExistsException exception) {
+    public Map<String, String> handleUserAlreadyExistsException(
+            UserAlreadyExistsException exception) {
         Map<String, String> map = new HashMap<>();
         map.put("error", exception.getMessage());
-        
+
         return map;
     }
 
@@ -54,7 +58,8 @@ public class CustomExceptionHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IncorrectVerificationCodeException.class)
-    public Map<String, String> IncorrectVerificationCodeException(IncorrectVerificationCodeException exception) {
+    public Map<String, String> IncorrectVerificationCodeException(
+            IncorrectVerificationCodeException exception) {
         Map<String, String> map = new HashMap<>();
         map.put("error", exception.getMessage());
 
@@ -63,7 +68,8 @@ public class CustomExceptionHandler {
 
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(SameSenderAndRecipientAccException.class)
-    public Map<String, String> SameSenderAndRecipientAccException(SameSenderAndRecipientAccException exception) {
+    public Map<String, String> SameSenderAndRecipientAccException(
+            SameSenderAndRecipientAccException exception) {
         Map<String, String> map = new HashMap<>();
         map.put("error", exception.getMessage());
 
@@ -81,7 +87,8 @@ public class CustomExceptionHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(RecipientAccNotExistsException.class)
-    public Map<String, String> RecipientAccNotExistsException(RecipientAccNotExistsException exception) {
+    public Map<String, String> RecipientAccNotExistsException(
+            RecipientAccNotExistsException exception) {
         Map<String, String> map = new HashMap<>();
         map.put("error", exception.getMessage());
 
@@ -90,7 +97,8 @@ public class CustomExceptionHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(InsufficientFundsException.class)
-    public Map<String, String> RecipientAccNotExistsException(InsufficientFundsException exception) {
+    public Map<String, String> RecipientAccNotExistsException(
+            InsufficientFundsException exception) {
         Map<String, String> map = new HashMap<>();
         map.put("error", exception.getMessage());
 
@@ -108,11 +116,11 @@ public class CustomExceptionHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ExpiredVerificationCodeException.class)
-    public Map<String, String> ExpiredVerificationCodeException(ExpiredVerificationCodeException exception) {
+    public Map<String, String> ExpiredVerificationCodeException(
+            ExpiredVerificationCodeException exception) {
         Map<String, String> map = new HashMap<>();
         map.put("error", exception.getMessage());
 
         return map;
     }
 }
-

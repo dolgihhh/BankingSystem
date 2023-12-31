@@ -22,14 +22,17 @@ public class CreditController {
     private final CreditService creditService;
 
     @PostMapping("")
-    public ResponseEntity<?> takeCredit(@Valid @RequestBody CreditDTO creditDTO) throws RecipientAccNotExistsException {
+    public ResponseEntity<?> takeCredit(@Valid @RequestBody CreditDTO creditDTO)
+            throws RecipientAccNotExistsException {
 
         return creditService.takeCredit(creditDTO);
     }
 
     @PostMapping("/payment")
-    public ResponseEntity<?> makeCreditPayment(@Valid @RequestBody CreditPaymentDTO creditPaymentDTO)
-            throws SenderAccNotExistsException, CreditNotExistsException, InsufficientFundsException {
+    public ResponseEntity<?> makeCreditPayment(
+            @Valid @RequestBody CreditPaymentDTO creditPaymentDTO)
+            throws SenderAccNotExistsException, CreditNotExistsException,
+                   InsufficientFundsException {
 
         return creditService.makeCreditPayment(creditPaymentDTO);
     }

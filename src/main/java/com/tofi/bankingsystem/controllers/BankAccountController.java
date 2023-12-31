@@ -19,7 +19,7 @@ public class BankAccountController {
 
     @PostMapping("")
     public ResponseEntity<?> createBankAccount() {
-        System.out.println("popalo v controller");
+
         return bankAccountService.createBankAccount();
     }
 

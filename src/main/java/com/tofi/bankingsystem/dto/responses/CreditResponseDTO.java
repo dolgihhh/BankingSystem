@@ -2,7 +2,6 @@ package com.tofi.bankingsystem.dto.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tofi.bankingsystem.enums.CreditType;
-import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
@@ -10,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data

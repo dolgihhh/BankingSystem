@@ -26,8 +26,11 @@ public class SavingService {
 
 
     public ResponseEntity<?> enableSavings(SavingDTO savingDTO) {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
         Saving saving = user.getSaving();
 
         if (saving == null) {
@@ -35,7 +38,8 @@ public class SavingService {
         }
 
         if (saving.isOn()) {
-            return ResponseHandler.generateErrorResponse("Savings already enabled", HttpStatus.CONFLICT);
+            return ResponseHandler.generateErrorResponse("Savings already enabled",
+                                                         HttpStatus.CONFLICT);
         }
 
         saving.setOn(true);
@@ -46,18 +50,21 @@ public class SavingService {
     }
 
     public ResponseEntity<?> disableSavings() {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
         Saving saving = user.getSaving();
 
         if (saving == null) {
             return ResponseHandler.generateErrorResponse("Savings not created",
-                    HttpStatus.BAD_REQUEST);
+                                                         HttpStatus.BAD_REQUEST);
         }
 
         if (!saving.isOn()) {
             return ResponseHandler.generateErrorResponse("Savings already disabled",
-                    HttpStatus.CONFLICT);
+                                                         HttpStatus.CONFLICT);
         }
 
         saving.setOn(false);
@@ -78,27 +85,34 @@ public class SavingService {
     }
 
     public void increaseTotalAccumulated(BigDecimal savingAmount, Saving saving) {
-        BigDecimal newTotalAccumulated = saving.getTotalAccumulated().add(savingAmount);
+        BigDecimal newTotalAccumulated = saving.getTotalAccumulated()
+                                               .add(savingAmount);
         saving.setTotalAccumulated(newTotalAccumulated);
         savingRepository.save(saving);
     }
 
     public ResponseEntity<?> getSavings() {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
         Saving saving = user.getSaving();
         if (saving == null) {
             return ResponseHandler.generateResponse("No savings",
-                    HttpStatus.OK);
+                                                    HttpStatus.OK);
         }
 
         SavingResponseDTO savingResponseDTO = new SavingResponseDTO();
         savingResponseDTO.setOn(saving.isOn());
         savingResponseDTO.setRoundingValue(saving.getRoundingValue());
         savingResponseDTO.setTotalAccumulated(saving.getTotalAccumulated());
-        savingResponseDTO.setBankAccountNumber(saving.getBankAccount().getNumber());
+        savingResponseDTO.setBankAccountNumber(saving.getBankAccount()
+                                                     .getNumber());
         savingResponseDTO.setMessage("Success");
-        savingResponseDTO.setBalance(saving.getBankAccount().getBalance());
-        return ResponseEntity.status(HttpStatus.OK).body(savingResponseDTO);
+        savingResponseDTO.setBalance(saving.getBankAccount()
+                                           .getBalance());
+        return ResponseEntity.status(HttpStatus.OK)
+                             .body(savingResponseDTO);
     }
 }

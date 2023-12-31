@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,7 +38,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwt;
 
-        if(authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
             try {
                 username = jwtTokenUtils.getUsername(jwt);
@@ -83,13 +82,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (username != null && SecurityContextHolder.getContext()
+                                                     .getAuthentication() == null) {
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     username,
                     null,
                     Collections.emptyList()
             );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext()
+                                 .setAuthentication(authentication);
             filterChain.doFilter(request, response);
         }
     }

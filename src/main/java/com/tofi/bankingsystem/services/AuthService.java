@@ -37,9 +37,11 @@ public class AuthService {
     private final EmailService emailService;
 
     @Transactional
-    public ResponseEntity<?> registerUser(UserRegistrationDTO registrationDTO) throws UserAlreadyExistsException {
+    public ResponseEntity<?> registerUser(UserRegistrationDTO registrationDTO)
+            throws UserAlreadyExistsException {
         if (userService.userExistsByEmail(registrationDTO.getEmail())) {
-            throw new UserAlreadyExistsException("User with given email already exists"); // goes to CustomExceptionHandler
+            throw new UserAlreadyExistsException(
+                    "User with given email already exists"); // goes to CustomExceptionHandler
         }
 
         return userService.createUser(registrationDTO);
@@ -49,9 +51,10 @@ public class AuthService {
     @Transactional
     public ResponseEntity<?> firstAuthenticateUser(UserFirstLoginDTO firstLoginDTO) {
         User user =
-                userService.findByEmail(firstLoginDTO.getEmail()).orElseThrow(() -> new UsernameNotFoundException("Wrong email"));
+                userService.findByEmail(firstLoginDTO.getEmail())
+                           .orElseThrow(() -> new UsernameNotFoundException("Wrong email"));
 
-        if(!passwordEncoder.matches(firstLoginDTO.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(firstLoginDTO.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Wrong password");
         }
 
@@ -64,39 +67,44 @@ public class AuthService {
         emailService.sendEmail(mailMessage);
 
         user.setVerificationCode(passwordEncoder.encode(verificationCode));
-        user.setVerificationCodeExpireTime(LocalDateTime.now().plusMinutes(240));
+        user.setVerificationCodeExpireTime(LocalDateTime.now()
+                                                        .plusMinutes(240));
         userService.updateUser(user);
 
         return ResponseHandler.generateResponse("Correct email and password. Verification" +
-                        " code has been sent to your email", HttpStatus.OK);
+                                                " code has been sent to your email", HttpStatus.OK);
     }
 
 
     public ResponseEntity<?> secondAuthenticateUser(UserSecondLoginDTO secondLoginDTO) throws
-            IncorrectVerificationCodeException, ExpiredVerificationCodeException {
+                                                                                       IncorrectVerificationCodeException,
+                                                                                       ExpiredVerificationCodeException {
         String email = secondLoginDTO.getEmail();
-        User user = userService.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(
-                String.format("User with email '%s' not found", email)
-        ));
+        User user = userService.findByEmail(email)
+                               .orElseThrow(() -> new UsernameNotFoundException(
+                                       String.format("User with email '%s' not found", email)
+                               ));
 
-        if(user.getVerificationCodeExpireTime().isBefore(LocalDateTime.now())) {
+        if (user.getVerificationCodeExpireTime()
+                .isBefore(LocalDateTime.now())) {
             throw new ExpiredVerificationCodeException("Verification code expired. Login again");
         }
 
         if (!passwordEncoder.matches(secondLoginDTO.getVerificationCode(),
-                user.getVerificationCode())) {
+                                     user.getVerificationCode())) {
             throw new IncorrectVerificationCodeException("Incorrect verification code");
         }
 
         authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(secondLoginDTO.getEmail(),
-                        secondLoginDTO.getVerificationCode()));
+                                                                      secondLoginDTO.getVerificationCode()));
         //calls userService.loadUserByUsername(loginDTO.getEmail());
 
         //SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenUtils.generateToken(user);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new LoginResponseDTO(token));
+        return ResponseEntity.status(HttpStatus.OK)
+                             .body(new LoginResponseDTO(token));
     }
 
 }

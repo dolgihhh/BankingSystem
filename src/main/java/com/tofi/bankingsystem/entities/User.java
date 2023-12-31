@@ -1,15 +1,15 @@
 package com.tofi.bankingsystem.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Entity(name="Users")
-@Table(name="users")
+@Entity(name = "Users")
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

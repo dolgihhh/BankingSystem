@@ -1,8 +1,6 @@
 package com.tofi.bankingsystem.services;
 
-import com.tofi.bankingsystem.dto.requests.UserRegistrationDTO;
 import com.tofi.bankingsystem.dto.responses.BankAccountDTO;
-import com.tofi.bankingsystem.dto.responses.LoginResponseDTO;
 import com.tofi.bankingsystem.entities.BankAccount;
 import com.tofi.bankingsystem.entities.User;
 import com.tofi.bankingsystem.repositiries.BankAccountRepository;
@@ -40,11 +38,12 @@ public class BankAccountService {
             bankAccountDTO.setBalance(newBankAccount.getBalance());
             bankAccountDTO.setOpeningDate(newBankAccount.getOpeningDate());
 
-            return ResponseEntity.status(HttpStatus.OK).body(bankAccountDTO);
+            return ResponseEntity.status(HttpStatus.OK)
+                                 .body(bankAccountDTO);
         } catch (Exception e) {
 
             return ResponseHandler.generateErrorResponse(e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                                                         HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -55,9 +54,12 @@ public class BankAccountService {
             generatedAccountNumber = bankAccountNumberUtils.generateBankAccountNumber();
         }
 
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
         System.out.println(userEmail);
-        User user = userService.findByEmail(userEmail).orElse(null);
+        User user = userService.findByEmail(userEmail)
+                               .orElse(null);
 
         BankAccount newBankAccount = new BankAccount();
         newBankAccount.setNumber(generatedAccountNumber);
@@ -79,30 +81,37 @@ public class BankAccountService {
     }
 
     public void reduceBalance(BigDecimal amount, BankAccount bankAccount) {
-        BigDecimal newBalance = bankAccount.getBalance().subtract(amount);
+        BigDecimal newBalance = bankAccount.getBalance()
+                                           .subtract(amount);
         bankAccount.setBalance(newBalance);
         bankAccountRepository.save(bankAccount);
     }
 
     public void increaseBalance(BigDecimal amount, BankAccount bankAccount) {
-        BigDecimal newBalance = bankAccount.getBalance().add(amount);
+        BigDecimal newBalance = bankAccount.getBalance()
+                                           .add(amount);
         bankAccount.setBalance(newBalance);
         bankAccountRepository.save(bankAccount);
     }
 
     public ResponseEntity<?> getBankAccounts() {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException(""));
+        String userEmail = SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName();
+        User user = userService.findByEmail(userEmail)
+                               .orElseThrow(() -> new UsernameNotFoundException(""));
         //System.out.println(user.getBankAccounts().size());
         List<BankAccount> bankAccounts =
-                bankAccountRepository.findByUserAndSavingIsNullAndCreditIsNullOrderByOpeningDateDesc(user);
+                bankAccountRepository.findByUserAndSavingIsNullAndCreditIsNullOrderByOpeningDateDesc(
+                        user);
         //System.out.println(bankAccounts);
         System.out.println(bankAccounts.size());
 
         System.out.println(userEmail);
         System.out.println(LocalTime.now());
 
-        return ResponseEntity.status(HttpStatus.OK).body(bankAccounts);
+        return ResponseEntity.status(HttpStatus.OK)
+                             .body(bankAccounts);
         //return ResponseHandler.generateResponse("Ok",HttpStatus.OK);
     }
 }

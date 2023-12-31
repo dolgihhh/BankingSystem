@@ -1,7 +1,6 @@
 package com.tofi.bankingsystem.dto.requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.tofi.bankingsystem.entities.BankAccount;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

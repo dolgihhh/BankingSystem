@@ -6,11 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity(name="Credits")
-@Table(name="credits")
+@Entity(name = "Credits")
+@Table(name = "credits")
 @Data
 @AllArgsConstructor
 public class Credit {
@@ -20,7 +19,8 @@ public class Credit {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "bank_account_number", referencedColumnName = "account_number", nullable = false)
+    @JoinColumn(name = "bank_account_number", referencedColumnName = "account_number",
+                nullable = false)
     private BankAccount bankAccount;
 
     @Column(nullable = false)

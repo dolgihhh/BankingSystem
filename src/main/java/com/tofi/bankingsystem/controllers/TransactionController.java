@@ -21,8 +21,10 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping("")
-    public ResponseEntity<?> makeTransaction(@Valid @RequestBody TransactionDTO transactionDTO) throws SameSenderAndRecipientAccException,
-            RecipientAccNotExistsException, SenderAccNotExistsException, InsufficientFundsException {
+    public ResponseEntity<?> makeTransaction(@Valid @RequestBody TransactionDTO transactionDTO)
+            throws SameSenderAndRecipientAccException,
+                   RecipientAccNotExistsException, SenderAccNotExistsException,
+                   InsufficientFundsException {
 
         return transactionService.makeTransaction(transactionDTO);
     }
